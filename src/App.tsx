@@ -1,79 +1,70 @@
-import { useState, useEffect } from 'react'
+
+import { useEffect, useState } from 'react'
 import './App.css'
+import SWR from './components/SWR.tsx'
+import ReactQuery from './components/ReactQuery.tsx';
+import Axios from './components/Axios.tsx';
+import { QueryClient, QueryClientProvider } from 'react-query';
 
-const useImageURL = () => {
-  const [imageURL, setImageURL] = useState(null);
+const queryClient = new QueryClient();
+
+const useImageURL = ()=>{
+  const [imgURL, setImageURL] = useState(null);
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [res1, setRes1] = useState();
-  const [res2, setRes2] = useState();
-
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const dataFetch = async () => {
-      const result =(
-        await Promise.all([
-    // Simulando una primera solicitud de imagen
-    fetch("https://jsonplaceholder.typicode.com/photos/1", { mode: "cors" })
-      .then((response)=>{
-        if (response.status >= 400){
-          throw new Error("Server error!!");
-        }
-        return response.json();
-      })
-      .then((response) => {
-        console.log(response)
-        setImageURL(response.url)
-      })
-      .catch((error) => setError(error))
-      .finally(()=>setLoading(false)),
-
-    // Simulando una segunda solicitud de imagen después de un retraso
-    fetch("https://jsonplaceholder.typicode.com/photos/2", { mode: "cors" })
-    .then((response)=>{
-      if (response.status >= 400){
-        throw new Error("Server error!!");
-      }
-      return response.json();
-    })
+    fetch("https://jsonplaceholder.typicode.com/photos",{mode: "cors"})
     .then((response) => {
-      console.log(response)
-      // Aquí solo estamos actualizando la URL de la imagen sin cambiar el estado de carga
-      setImageURL(response.url)
+     if(response.status >=400){
+      throw new Error("Error!!")
+     }
+      return response.json()
     })
-    .catch((error) => setError(error)),
-  ])
-  ).map((r)=> r.json());
+    .then((response) => setImageURL(response[0].url))
+    .catch((error) => setError(error))
+    .finally(()=>setLoading(false))
+  },   []);
 
-  const [img1, img2] =
-        await Promise.all(result);
-
-  // when the data is ready, save it to state
-      setRes1(img1);
-      setRes2(img2);
-
-  };
-
-  dataFetch();
-  }, []);
-
-  return { res1,res2,imageURL, error, loading };
-};
+  return {imgURL, error, loading}
+}
 
 function App() {
-  const { imageURL, error, loading } = useImageURL();
+  const {imgURL, error, loading}=useImageURL();
 
-  if (loading) return <p>Loading...</p>
-  if (error) return <p> A network error was encountered ! </p>
+  if (loading) return <p>Page loading, please wait!!!</p>
+  if (error) return <p>A network error was encountered!!!</p>
 
   return (
-    imageURL && (
+    <QueryClientProvider client={queryClient}>
+    <>
+    {imgURL && (
       <>
-        <h1>An image</h1>
-        <img src={imageURL} alt={"placeholder text"} />
-      </>
-    )
+      <h1>An image FETCH</h1>
+      <img src={imgURL} alt={'placeholder Text'}/>
+    </>
+    )}
+    <SWR/>
+    <ReactQuery/>
+    <Axios/>
+    </>
+    </QueryClientProvider>
   )
 }
 
-export default App
+
+
+/*interface AppProps {
+  name: string;
+}
+
+const App: React.FC<AppProps> = ({ name }) => {
+  return (
+    <div>
+      <h1>Hello, {name}!</h1>
+      <button>Click me</button>
+    </div>
+  );
+};*/
+
+export default App;
